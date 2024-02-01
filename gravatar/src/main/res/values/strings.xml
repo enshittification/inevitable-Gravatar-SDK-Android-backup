@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gravatar_bottom_sheet_security_info">Gravatar securely stores and updates your profile information across all platforms, syncing changes instantly.</string>
+    <string name="gravatar_bottom_sheet_update_once_title">Update Once, Shown Everywhere</string>
+    <string name="gravatar_bottom_sheet_update_once_description">Share your avatar, name, and bio with ease.</string>
+    <string name="gravatar_bottom_sheet_digital_identity_title">Own Your Digital Identity</string>
+    <string name="gravatar_bottom_sheet_digital_identity_description">With Gravatar, your data is yours and yours only.</string>
+    <string name="continue_label">Continue</string>
+    <string name="gravatar_profiles_info_label">This app uses Gravatar profiles.</string>
+</resources>
