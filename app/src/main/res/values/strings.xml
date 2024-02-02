@@ -7,4 +7,7 @@
     <string name="force_default_avatar_image_label">Force Default Avatar</string>
     <string name="image_rating_label">Image Rating</string>
     <string name="snackbar_unknown_error_message">Unknown error</string>
+    <string name="open_bottomsheet_button_label">Open BottomSheet</string>
+    <string name="tab_title_gravatar_url">Gravatar URL</string>
+    <string name="tab_title_bottomsheet">BottomSheet</string>
 </resources>
