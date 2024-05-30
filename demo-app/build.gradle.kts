@@ -52,6 +52,16 @@ android {
                 "DEMO_GRAVATAR_API_KEY",
                 properties["demo-app.gravatar.api.key"]?.let { "\"$it\"" } ?: "null",
             )
+            buildConfigField(
+                    "String",
+                "DEMO_WORDPRESS_CLIENT_ID",
+                "\"${properties["demo-app.wordpress.oauth.clientId"]?.toString() ?: ""}\"",
+            )
+            buildConfigField(
+                "String",
+                "DEMO_WORDPRESS_CLIENT_SECRET",
+                "\"${properties["demo-app.wordpress.oauth.clientSecret"]?.toString() ?: ""}\"",
+            )
         }
     }
 

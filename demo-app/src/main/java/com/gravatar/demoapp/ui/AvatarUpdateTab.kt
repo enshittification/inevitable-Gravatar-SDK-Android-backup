@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,17 +26,31 @@ import androidx.compose.ui.unit.dp
 import com.gravatar.demoapp.BuildConfig
 import com.gravatar.demoapp.R
 import com.gravatar.demoapp.ui.components.GravatarEmailInput
-import com.gravatar.demoapp.ui.components.GravatarPasswordInput
 import com.gravatar.services.ErrorType
-import com.gravatar.ui.GravatarImagePickerWrapper
 import com.gravatar.ui.GravatarImagePickerWrapperListener
+import com.gravatar.ui.components.WordPressImagePicker
+
 
 @Composable
 fun AvatarUpdateTab(showSnackBar: (String?, Throwable?) -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     var email by remember { mutableStateOf(BuildConfig.DEMO_EMAIL) }
-    var wordpressBearerToken by remember { mutableStateOf(BuildConfig.DEMO_WORDPRESS_BEARER_TOKEN) }
-    var wordpressBearerTokenVisible by rememberSaveable { mutableStateOf(false) }
     var isUploading by remember { mutableStateOf(false) }
+    val imagePickerWrapperListener = object : GravatarImagePickerWrapperListener {
+        override fun onAvatarUploadStarted() {
+            isUploading = true
+        }
+
+        override fun onSuccess(response: Unit) {
+            isUploading = false
+            showSnackBar(context.getString(R.string.avatar_update_upload_success_toast), null)
+        }
+
+        override fun onError(errorType: ErrorType) {
+            isUploading = false
+            showSnackBar(context.getString(R.string.avatar_update_upload_failed_toast, errorType), null)
+        }
+    }
 
     Column(
         modifier = modifier
@@ -46,38 +59,16 @@ fun AvatarUpdateTab(showSnackBar: (String?, Throwable?) -> Unit, modifier: Modif
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val context = LocalContext.current
         GravatarEmailInput(email = email, onValueChange = { email = it }, Modifier.fillMaxWidth())
-        GravatarPasswordInput(
-            password = wordpressBearerToken,
-            passwordIsVisible = wordpressBearerTokenVisible,
-            onValueChange = { wordpressBearerToken = it },
-            onVisibilityChange = { wordpressBearerTokenVisible = it },
-            label = { Text(stringResource(R.string.wordpress_bearer_token_label)) },
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .fillMaxWidth(),
-        )
-        GravatarImagePickerWrapper(
-            { UpdateAvatarComposable(isUploading) },
-            email,
-            wordpressBearerToken,
-            object : GravatarImagePickerWrapperListener {
-                override fun onAvatarUploadStarted() {
-                    isUploading = true
-                }
 
-                override fun onSuccess(response: Unit) {
-                    isUploading = false
-                    showSnackBar(context.getString(R.string.avatar_update_upload_success_toast), null)
-                }
-
-                override fun onError(errorType: ErrorType) {
-                    isUploading = false
-                    showSnackBar(context.getString(R.string.avatar_update_upload_failed_toast, errorType), null)
-                }
+        WordPressImagePicker(
+            content = {
+                UpdateAvatarComposable(isUploading)
             },
-            modifier = Modifier.padding(top = 16.dp),
+            clientId = BuildConfig.DEMO_WORDPRESS_CLIENT_ID,
+            clientSecret = BuildConfig.DEMO_WORDPRESS_CLIENT_SECRET,
+            email = email, listener =
+            imagePickerWrapperListener
         )
     }
 }
