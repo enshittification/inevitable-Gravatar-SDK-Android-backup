@@ -53,7 +53,7 @@ android {
                 properties["demo-app.gravatar.api.key"]?.let { "\"$it\"" } ?: "null",
             )
             buildConfigField(
-                    "String",
+                "String",
                 "DEMO_WORDPRESS_CLIENT_ID",
                 "\"${properties["demo-app.wordpress.oauth.clientId"]?.toString() ?: ""}\"",
             )

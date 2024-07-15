@@ -68,4 +68,12 @@ internal class GravatarSdkContainer private constructor() {
         }.addConverterFactory(GsonConverterFactory.create(gson))
             .build().create(GravatarApi::class.java)
     }
+
+    // Workaround to avoid adding the token in the header
+    fun getGravatarV3ServiceWithoutApiKey(okHttpClient: OkHttpClient? = null): GravatarApi {
+        return getRetrofitApiV3Builder().apply {
+            okHttpClient?.let { client(it) }
+        }.addConverterFactory(GsonConverterFactory.create(gson))
+            .build().create(GravatarApi::class.java)
+    }
 }

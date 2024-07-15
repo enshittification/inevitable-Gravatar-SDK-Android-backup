@@ -11,8 +11,18 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.browser.customtabs.CustomTabsIntent.Builder
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -22,12 +32,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toFile
 import androidx.core.util.Consumer
+import coil.compose.AsyncImage
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
+import com.gravatar.restapi.models.Avatar
+import com.gravatar.restapi.models.Identity
+import com.gravatar.restapi.models.SelectAvatar
 import com.gravatar.services.AvatarService
+import com.gravatar.services.IdentityService
 import com.gravatar.services.Result
 import com.gravatar.types.Email
 import com.gravatar.ui.GravatarImagePickerWrapperListener
@@ -86,6 +105,8 @@ public fun WordPressImagePicker(
         }
     }
 
+    var showBottomSheet by remember { mutableStateOf(false) }
+
     if (activity != null) {
         DisposableEffect(Unit) {
             val listener = Consumer<Intent> {
@@ -94,7 +115,8 @@ public fun WordPressImagePicker(
                     coroutineScope.launch(Dispatchers.IO) {
                         handleAuthorizationCode(code, clientId, clientSecret)?.let { token ->
                             wordpressBearerToken = token
-                            imagePickerLauncher.launch(IMAGE_MIME_TYPE)
+                            showBottomSheet = true
+//                            imagePickerLauncher.launch(IMAGE_MIME_TYPE)
                         }
                     }
                 } else {
@@ -125,9 +147,101 @@ public fun WordPressImagePicker(
         content()
     }
 
+    if (showBottomSheet) {
+        wordpressBearerToken?.let {
+            AvatarPickerBottomSheet(email, it) {
+                showBottomSheet = false
+            }
+        }
+    }
+
     selectedImageUri?.let { image ->
         selectedImageUri = null
         launchAvatarCrop(image, uCropLauncher, LocalContext.current, imageEditionOptions)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AvatarPickerBottomSheet(email: String, wordPressToken: String, onDismiss: () -> Unit) {
+    val modalBottomSheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var avatars by remember { mutableStateOf(emptyList<Avatar>()) }
+    var selectedIdentity by remember { mutableStateOf<Identity?>(null) }
+    val identityService = IdentityService()
+
+    val onAvatarClicked: (Avatar) -> Unit = { avatar ->
+        scope.launch {
+            identityService.setAvatar((Email(email).hash().toString()), SelectAvatar(avatar.image_id), wordPressToken)
+            selectedIdentity = identityService.getIdentities(Email(email).hash().toString(), wordPressToken).let {
+                when (it) {
+                    is Result.Success -> it.value
+                    is Result.Failure -> null
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        scope.launch {
+            avatars = identityService.getAvatars(wordPressToken).let {
+                when (it) {
+                    is Result.Success -> it.value
+                    is Result.Failure -> emptyList()
+                }
+            }
+        }
+
+        scope.launch {
+            selectedIdentity = identityService.getIdentities(Email(email).hash().toString(), wordPressToken).let {
+                when (it) {
+                    is Result.Success -> it.value
+                    is Result.Failure -> null
+                }
+            }
+        }
+
+        onDispose {
+            // cleanup
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        sheetState = modalBottomSheetState,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        AvatarPicker(avatars, selectedIdentity, onAvatarClicked)
+    }
+}
+
+@Composable
+private fun AvatarPicker(avatars: List<Avatar>, selectedIdentity: Identity?, onAvatarClicked: (Avatar) -> Unit) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        items(avatars.size) { index ->
+            AsyncImage(
+                model = "https://www.gravatar.com${avatars[index].image_url}",
+                contentDescription = "Translated description of what the image contains",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .fillMaxWidth()
+                    .then(
+                        if (selectedIdentity?.image_id == avatars[index].image_id) {
+                            Modifier.border(4.dp, Color.Blue, RoundedCornerShape(14.dp))
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .clickable {
+                        onAvatarClicked(avatars[index])
+                    },
+            )
+        }
     }
 }
 
@@ -138,7 +252,6 @@ public fun Context.findComponentActivity(): ComponentActivity? = when (this) {
 }
 
 public suspend fun handleAuthorizationCode(code: String, clientId: String, clientSecret: String): String? {
-
     val retrofit = Retrofit.Builder()
         .baseUrl("https://public-api.wordpress.com")
         .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
@@ -150,7 +263,7 @@ public suspend fun handleAuthorizationCode(code: String, clientId: String, clien
         "wp-oauth-test://authorization-callback",
         clientSecret,
         code,
-        "authorization_code"
+        "authorization_code",
     )
 
     Log.d("MainActivity", "Token: ${result.body()?.token}")
@@ -165,13 +278,13 @@ internal interface WordPressOAuthApi {
         @Field("redirect_uri") redirectUri: String?,
         @Field("client_secret") clientSecret: String?,
         @Field("code") user: String?,
-        @Field("grant_type") grantType: String?
+        @Field("grant_type") grantType: String?,
     ): Response<TokenModel>
 }
 
 internal class TokenModel(
     @SerializedName("access_token") val token: String,
-    @SerializedName("token_type") val type: String
+    @SerializedName("token_type") val type: String,
 )
 
 private fun launchAvatarCrop(
