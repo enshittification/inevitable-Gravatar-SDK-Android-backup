@@ -7,7 +7,6 @@
  */
 package com.gravatar.restapi.apis
 
-import com.gravatar.restapi.models.Avatar
 import com.gravatar.restapi.models.Identity
 import com.gravatar.restapi.models.SelectAvatar
 import retrofit2.Response
@@ -19,20 +18,14 @@ import retrofit2.http.Path
 
 internal interface IdentitiesApi {
     /**
-     * # List avatars
-     * curl -X GET --location "https://api.gravatar.com/v3/me/avatars" \
-     * -H "Authorization: Bearer TOKEN"
-     */
-    @GET("me/avatars")
-    suspend fun getAvatars(
-        @Header("Authorization") authorization: kotlin.String,
-    ): Response<List<Avatar>>
-
-    /**
-     * # Get details for your identity
-     * # EMAIL_SHA256: should be your email's sha
-     * curl -X GET --location "https://api.gravatar.com/v3/me/identities/EMAIL_SHA256" \
-     * -H "Authorization: Bearer TOKEN"
+     * Get identity details
+     * Retrieves details for the identity associated with the provided email hash.
+     * Responses:
+     *  - 200: Successful retrieval of identity details
+     *
+     * @param emailHash SHA256 hash of the email address
+     * @param authorization Bearer token (OAuth) to authenticate the request.
+     * @return [Identity]
      */
     @GET("me/identities/{emailHash}")
     suspend fun getIdentity(
@@ -41,20 +34,20 @@ internal interface IdentitiesApi {
     ): Response<Identity>
 
     /**
-     * # Set avatar for your identity
-     * # EMAIL_SHA256: should be your email's sha
-     * # IMAGE_ID comes from the List avatars endpoint
-     * curl -X POST --location "https://api.gravatar.com/v3/me/identities/EMAIL_SHA256/avatar" \
-     * -H "Authorization: Bearer TOKEN" \
-     * -H "Content-Type: application/json" \
-     * -d '{
-     * "avatar_id": "IMAGE_ID"
-     * }'
+     * Set avatar for identity
+     * Sets the avatar for the identity associated with the provided email hash.
+     * Responses:
+     *  - 204: Avatar successfully set
+     *
+     * @param emailHash SHA256 hash of the email address
+     * @param authorization Bearer token (OAuth) to authenticate the request.
+     * @param selectAvatar Avatar selection details
+     * @return [Unit]
      */
     @POST("me/identities/{emailHash}/avatar")
     suspend fun setIdentityAvatar(
         @Path("emailHash") emailHash: kotlin.String,
-        @Body avatarId: SelectAvatar,
         @Header("Authorization") authorization: kotlin.String,
+        @Body selectAvatar: SelectAvatar,
     ): Response<Unit>
 }

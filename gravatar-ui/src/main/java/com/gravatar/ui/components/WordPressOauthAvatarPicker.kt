@@ -172,7 +172,7 @@ private fun AvatarPickerBottomSheet(email: String, wordPressToken: String, onDis
 
     val onAvatarClicked: (Avatar) -> Unit = { avatar ->
         scope.launch {
-            identityService.setAvatar((Email(email).hash().toString()), SelectAvatar(avatar.image_id), wordPressToken)
+            identityService.setAvatar((Email(email).hash().toString()), SelectAvatar {avatar.imageId }, wordPressToken)
             selectedIdentity = identityService.getIdentities(Email(email).hash().toString(), wordPressToken).let {
                 when (it) {
                     is Result.Success -> it.value
@@ -224,14 +224,14 @@ private fun AvatarPicker(avatars: List<Avatar>, selectedIdentity: Identity?, onA
     ) {
         items(avatars.size) { index ->
             AsyncImage(
-                model = "https://www.gravatar.com${avatars[index].image_url}",
+                model = "https://www.gravatar.com${avatars[index].imageUrl}",
                 contentDescription = "Translated description of what the image contains",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
                     .fillMaxWidth()
                     .then(
-                        if (selectedIdentity?.image_id == avatars[index].image_id) {
+                        if (selectedIdentity?.imageId == avatars[index].imageId) {
                             Modifier.border(4.dp, Color.Blue, RoundedCornerShape(14.dp))
                         } else {
                             Modifier

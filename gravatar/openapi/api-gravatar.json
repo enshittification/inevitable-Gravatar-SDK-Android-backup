@@ -19,10 +19,121 @@
     {
       "name": "profiles",
       "description": "Operations about user profiles"
+    },
+    {
+      "name": "avatars",
+      "description": "Operations about user avatars"
+    },
+    {
+      "name": "identities",
+      "description": "Operations about user identities"
     }
   ],
   "components": {
     "schemas": {
+      "Avatar": {
+        "type": "object",
+        "description": "An avatar that the user has already uploaded to their Gravatar account.",
+        "required": [
+          "image_id",
+          "image_url",
+          "is_cropped",
+          "format",
+          "rating",
+          "updated_date",
+          "altText"
+        ],
+        "properties": {
+          "image_id": {
+            "type": "string",
+            "description": "The label for the link.",
+            "examples": [ "38be15a98a2bbc40df69172a2a8349" ]
+          },
+          "image_url": {
+            "type": "string",
+            "description": "Image URL",
+            "examples": [ "/userimage/252014526/d38bele5a98a2bbc40df69172a2a8348.jpeg" ]
+          },
+          "is_cropped": {
+            "type": "boolean",
+            "description": "Indicates whether the image has been cropped."
+          },
+          "format": {
+            "type": "integer",
+            "description": "Format of the image (e.g., JPEG, PNG)."
+          },
+          "rating":{
+            "type": "string",
+            "description": "Rating associated with the image."
+          },
+          "updated_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time when the image was last updated.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "examples": [ "2021-10-01T12:00:00Z" ]
+          },
+          "altText": {
+            "type": "string",
+            "description": "Alternative text description of the image."
+          }
+        }
+      },
+      "SelectAvatar": {
+        "type": "object",
+        "properties": {
+          "avatar_id": {"type": "string",
+            "description": "The unique identifier of the avatar to be set."
+          }
+        },
+        "required": [
+          "avatar_id"
+        ]
+      },
+      "Identity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the identity."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address associated with the identity."
+          },
+          "email_hash": {
+            "type": "string",
+            "description": "SHA256 hash of the email address."
+          },
+          "format": {
+            "type": "integer",
+            "description": "Format of the associated image (e.g., JPEG, PNG)."
+          },
+          "rating": {
+            "type": "string",
+            "description": "Rating associated with the identity's image."
+          },
+          "image_id": {
+            "type": "string",
+            "description": "Unique identifier for the identity's image."
+          },
+          "image_url": {
+            "type": "string",
+            "format": "url",
+            "description": "URL where the identity's image can be accessed."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "email_hash",
+          "format",
+          "rating",
+          "image_id",
+          "image_url"
+        ]
+      },
       "Link": {
         "type": "object",
         "description": "A link the user has added to their profile.",
@@ -375,6 +486,133 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/me/avatars": {
+      "get": {
+        "summary": "List avatars",
+        "description":"Retrieves a list of available avatars for the authenticated user.",
+        "tags": [
+          "avatars"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer token (OAuth) to authenticate the request."
+          }
+        ],
+        "operationId": "getAvatars",
+        "responses": {
+          "200":{
+            "description": "Successful retrieval of avatars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Avatar"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/identities/{emailHash}": {
+      "get": {
+        "summary": "Get identity details",
+        "description": "Retrieves details for the identity associated with the provided email hash.",
+        "tags": [
+          "identities"
+        ],
+        "parameters": [{
+          "name": "emailHash",
+          "in": "path",
+          "description": "SHA256 hash of the email address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer token (OAuth) to authenticate the request."
+          }
+        ],
+        "operationId": "getIdentity",
+        "responses": {
+          "200": {
+            "description": "Successful retrieval of identity details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }}
+            }
+          }
+        }
+      }
+    },
+    "/me/identities/{emailHash}/avatar": {
+      "post": {
+        "summary": "Set avatar for identity",
+        "description": "Sets the avatar for the identity associated with the provided email hash.",
+        "tags": [
+          "identities"
+        ],
+        "parameters": [
+          {
+            "name": "emailHash",
+            "in": "path",
+            "description": "SHA256 hash of the email address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer token (OAuth) to authenticate the request."
+          }
+        ],
+        "operationId": "setIdentityAvatar",
+        "requestBody": {
+          "description": "Avatar selection details",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectAvatar"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Avatar successfully set"
           }
         }
       }

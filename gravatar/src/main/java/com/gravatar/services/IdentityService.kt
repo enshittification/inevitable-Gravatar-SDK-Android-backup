@@ -61,7 +61,11 @@ public class IdentityService(okHttpClient: OkHttpClient? = null) {
     public suspend fun setAvatar(email: String, avatarId: SelectAvatar, oauthToken: String): Result<Unit, ErrorType> =
         runCatchingService {
             withContext(GravatarSdkDI.dispatcherIO) {
-                val response = service.setIdentityAvatar(email, avatarId, "Bearer $oauthToken")
+                val response = service.setIdentityAvatar(
+                    emailHash = email,
+                    authorization = "Bearer $oauthToken",
+                    selectAvatar = avatarId,
+                )
                 if (response.isSuccessful) {
                     val data = response.body()
                     if (data != null) {
