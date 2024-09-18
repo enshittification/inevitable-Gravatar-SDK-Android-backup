@@ -1,4 +1,4 @@
-package com.gravatar.services
+package com.gravatar.services.interceptor
 
 import okhttp3.Interceptor
 import okhttp3.Response

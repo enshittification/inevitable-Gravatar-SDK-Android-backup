@@ -2,8 +2,8 @@ package com.gravatar.di.container
 
 import com.google.gson.GsonBuilder
 import com.gravatar.GravatarConstants.GRAVATAR_API_BASE_URL_V3
-import com.gravatar.services.AuthenticationInterceptor
-import com.gravatar.services.AvatarUploadTimeoutInterceptor
+import com.gravatar.services.interceptor.AuthenticationInterceptor
+import com.gravatar.services.interceptor.AvatarUploadTimeoutInterceptor
 import com.gravatar.services.GravatarApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
