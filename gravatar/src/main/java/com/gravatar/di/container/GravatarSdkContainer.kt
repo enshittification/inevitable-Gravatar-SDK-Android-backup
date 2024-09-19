@@ -2,9 +2,10 @@ package com.gravatar.di.container
 
 import com.google.gson.GsonBuilder
 import com.gravatar.GravatarConstants.GRAVATAR_API_BASE_URL_V3
+import com.gravatar.services.GravatarApi
 import com.gravatar.services.interceptor.AuthenticationInterceptor
 import com.gravatar.services.interceptor.AvatarUploadTimeoutInterceptor
-import com.gravatar.services.GravatarApi
+import com.gravatar.services.interceptor.LanguageInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -28,6 +29,7 @@ internal class GravatarSdkContainer private constructor() {
     val dispatcherIO = Dispatchers.IO
 
     var apiKey: String? = null
+    var acceptedLanguages: String? = null
 
     fun getGravatarV3Service(okHttpClient: OkHttpClient? = null, oauthToken: String? = null): GravatarApi {
         return getRetrofitApiV3Builder().apply {
@@ -36,9 +38,15 @@ internal class GravatarSdkContainer private constructor() {
             .build().create(GravatarApi::class.java)
     }
 
-    private fun buildOkHttpClient(oauthToken: String?) = OkHttpClient()
-        .newBuilder()
-        .addInterceptor(AuthenticationInterceptor(oauthToken))
-        .addInterceptor(AvatarUploadTimeoutInterceptor())
-        .build()
+    private fun buildOkHttpClient(oauthToken: String?): OkHttpClient {
+        return OkHttpClient()
+            .newBuilder().apply {
+                addInterceptor(AuthenticationInterceptor(oauthToken))
+                addInterceptor(AvatarUploadTimeoutInterceptor())
+                acceptedLanguages?.let {
+                    addInterceptor(LanguageInterceptor(it))
+                }
+            }
+            .build()
+    }
 }

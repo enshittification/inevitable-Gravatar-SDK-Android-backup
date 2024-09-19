@@ -2,12 +2,14 @@ package com.gravatar.quickeditor
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.core.app.LocaleManagerCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import com.google.gson.GsonBuilder
+import com.gravatar.Gravatar
 import com.gravatar.quickeditor.data.FileUtils
 import com.gravatar.quickeditor.data.datastore.createEncryptedFileWithFallbackReset
 import com.gravatar.quickeditor.data.repository.AvatarRepository
@@ -33,6 +35,7 @@ internal class QuickEditorContainer private constructor(
 
         fun init(context: Context): QuickEditorContainer {
             instance = QuickEditorContainer(context)
+            Gravatar.acceptedLanguages(context.acceptedLanguages)
             return instance
         }
 
@@ -109,4 +112,10 @@ internal class QuickEditorContainer private constructor(
             .build()
             .create(WordPressOAuthApi::class.java)
     }
+
 }
+
+private val Context.acceptedLanguages: String
+    get() = LocaleManagerCompat.getApplicationLocales(this).toLanguageTags().ifEmpty {
+        LocaleManagerCompat.getSystemLocales(this).toLanguageTags()
+    }
