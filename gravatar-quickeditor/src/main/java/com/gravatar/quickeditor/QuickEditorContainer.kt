@@ -7,7 +7,6 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
-import com.google.gson.GsonBuilder
 import com.gravatar.quickeditor.data.FileUtils
 import com.gravatar.quickeditor.data.datastore.createEncryptedFileWithFallbackReset
 import com.gravatar.quickeditor.data.repository.AvatarRepository
@@ -18,10 +17,12 @@ import com.gravatar.quickeditor.data.storage.InMemoryTokenStorage
 import com.gravatar.quickeditor.data.storage.TokenStorage
 import com.gravatar.services.AvatarService
 import com.gravatar.services.ProfileService
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.github.osipxd.security.crypto.createEncrypted
 import kotlinx.coroutines.Dispatchers
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 internal class QuickEditorContainer private constructor(
     private val context: Context,
@@ -42,6 +43,10 @@ internal class QuickEditorContainer private constructor(
             return instance
         }
     }
+
+    private val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
 
     private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.createEncrypted(
         corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
@@ -97,10 +102,7 @@ internal class QuickEditorContainer private constructor(
     }
 
     private fun getWordpressOAuthApi(): WordPressOAuthApi {
-        return Retrofit.Builder()
-            .baseUrl("https://public-api.wordpress.com")
-            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
-            .build()
-            .create(WordPressOAuthApi::class.java)
+        return Retrofit.Builder().baseUrl("https://public-api.wordpress.com")
+            .addConverterFactory(MoshiConverterFactory.create(moshi)).build().create(WordPressOAuthApi::class.java)
     }
 }
