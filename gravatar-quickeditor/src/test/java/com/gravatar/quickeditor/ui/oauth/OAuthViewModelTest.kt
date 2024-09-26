@@ -73,7 +73,7 @@ class OAuthViewModelTest {
     }
 
     @Test
-    fun `given token when association check failed then OAuthAction_AuthorizationFailure sent`() = runTest {
+    fun `given token when association check failed then OAuthAction_AuthorizationSuccess sent`() = runTest {
         coEvery { profileService.checkAssociatedEmailCatching(token, email) } returns Result.Failure(ErrorType.Unknown)
 
         viewModel.tokenReceived(
@@ -83,8 +83,23 @@ class OAuthViewModelTest {
 
         viewModel.actions.test {
             expectMostRecentItem()
-            assertEquals(OAuthAction.AuthorizationFailure, awaitItem())
+            assertEquals(OAuthAction.AuthorizationSuccess, awaitItem())
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `given token when association check failed then token stored`() = runTest {
+        coEvery { profileService.checkAssociatedEmailCatching(token, email) } returns Result.Failure(ErrorType.Unknown)
+
+        viewModel.tokenReceived(
+            email,
+            token = token,
+        )
+
+        advanceUntilIdle()
+
+        coEvery { tokenStorage.storeToken(email.hash().toString(), token) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

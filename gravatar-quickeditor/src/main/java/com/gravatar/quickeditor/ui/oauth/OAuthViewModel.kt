@@ -64,10 +64,11 @@ internal class OAuthViewModel(
                 }
 
                 is Result.Failure -> {
-                    _uiState.update { currentState ->
-                        currentState.copy(status = OAuthStatus.LoginRequired)
-                    }
-                    _actions.send(OAuthAction.AuthorizationFailure)
+                    // The email not being associated is an edge case so in case of failure when checking it
+                    // we assume it is.
+                    // If it's not, the backend will respond with 401 UNAUTHORIZED in the editor
+                    tokenStorage.storeToken(email.hash().toString(), token)
+                    _actions.send(OAuthAction.AuthorizationSuccess)
                 }
             }
         }
